@@ -34,6 +34,19 @@ var Agent = function(simulation, opts, config) {
     this.simulation.chance.character({ pool: "0123456789" }),
     this.simulation.chance.character({ pool: "0123456789" })
   ].join("");
+  this.acceleration = {
+    x: 0.0,
+    y: 0.0
+  };
+  this.rotationRate = {
+    x: 0.0,
+    y: 0.0
+  };
+  this.heading = 0.0;
+  // route step reached so far in the simulation
+  this.stepReached = 0;
+  // sum of distances of all steps covered so far
+  this.totalCoveredStepsDistance = 0.0;
 };
 
 Agent.prototype.step = async function() {
@@ -152,13 +165,31 @@ Agent.prototype.step = async function() {
     }
   } else if (this.status === Status.TRAVELING) {
     // set vehicle location by % travel route complete
-    const progress =
+    let progress =
       (this.simulation.time - this.start) / (this.next - this.start);
+    progress = Math.max(Math.min(1.0, progress), 0.0);
 
+    const coveredDistance = progress * this.path.distance;
+    
     this.location = turf.along(
       this.path.line,
-      progress * this.path.distance
+      coveredDistance
     ).geometry.coordinates;
+
+    let newCovering = (coveredDistance*1000) - this.totalCoveredStepsDistance;
+    while (newCovering >= 0) {
+      const stepDistance = this.path.legs[0].steps[this.stepReached].distance;
+      newCovering -= stepDistance;
+      if (newCovering >= 0) {
+        this.stepReached++;
+        this.totalCoveredStepsDistance += stepDistance;
+      }
+    }
+    console.log("Step reached: " + this.stepReached);
+    console.log("Covered distance: " + (coveredDistance * 1000));
+    console.log("Progress: " + progress);
+
+
 
     // if breakdown triggered, transition to broken
     if (this.simulation.time >= this.breakdown) {
@@ -258,6 +289,12 @@ Agent.prototype.step = async function() {
       time: this.simulation.time,
       status: String(this.status).slice(7, -1)
     });
+    // adding current motion information
+    probe["motion"] = {
+      acceleration: this.acceleration,
+      rotationRate: this.rotationRate,
+      heading: this.heading
+    };
     fs.appendFileSync(this.probes, JSON.stringify(probe) + "\n");
   }
 };
@@ -321,6 +358,13 @@ Agent.prototype.route = async function(range) {
     this.path.distance = turf.length(this.path.line);
     this.start = this.simulation.time;
     this.next = this.simulation.time + this.path.duration;
+    
+    // Resetting steps progress
+    this.stepReached = 0;
+    this.totalCoveredStepsDistance = 0.0;
+    
+    console.log("STEPS NUMBER: " + this.path.legs[0].steps.length);
+    console.log("TOTAL DISTANCE: " + this.path.distance*1000);
 
     if (this.path.distance === 0) {
       return await this.route(range * 1.5);

@@ -149,6 +149,7 @@ Simulation.prototype.route = async function(a, b) {
     var options = {
       coordinates: [a, b],
       overview: "full",
+      steps: true,
       geometries: "geojson"
     };
 
