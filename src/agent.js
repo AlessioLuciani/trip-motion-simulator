@@ -36,11 +36,13 @@ var Agent = function(simulation, opts, config) {
   ].join("");
   this.acceleration = {
     x: 0.0,
-    y: 0.0
+    y: 0.0,
+    z: 0.0
   };
   this.rotationRate = {
     x: 0.0,
-    y: 0.0
+    y: 0.0,
+    z: 0.0
   };
   this.heading = 0.0;
   // route step reached so far in the simulation
@@ -176,6 +178,7 @@ Agent.prototype.step = async function() {
       coveredDistance
     ).geometry.coordinates;
 
+    // updating the current step based on the distance covered with this hop
     let newCovering = (coveredDistance*1000) - this.totalCoveredStepsDistance;
     while (newCovering >= 0) {
       const stepDistance = this.path.legs[0].steps[this.stepReached].distance;
@@ -189,7 +192,16 @@ Agent.prototype.step = async function() {
     console.log("Covered distance: " + (coveredDistance * 1000));
     console.log("Progress: " + progress);
 
+    const stepDistance = this.path.legs[0].steps[this.stepReached].distance;
+    // distance covered on current step
+    const stepCovering = newCovering + stepDistance;
+    // progress on the current step
+    const progressOnStep = stepCovering / stepDistance;
 
+    // updating heading linearly interpolating between two steps 
+    this.updateHeading(progressOnStep);
+
+    console.log("Heading: " + this.heading);
 
     // if breakdown triggered, transition to broken
     if (this.simulation.time >= this.breakdown) {
@@ -299,6 +311,23 @@ Agent.prototype.step = async function() {
   }
 };
 
+Agent.prototype.updateHeading = function(progressOnStep) {
+  let targetHeading = 0.0;
+  let startHeading = this.path.legs[0].steps[this.stepReached].maneuver.bearing_after;
+  let endHeading = this.path.legs[0].steps[this.stepReached+1].maneuver.bearing_before;
+  let headingDiff = endHeading - startHeading;
+  let headingShiftSign = Math.abs(headingDiff) > 180 ? -1 : 1;
+  let headingShift = headingDiff * progressOnStep * headingShiftSign;
+  targetHeading = startHeading + headingShift;
+  if (targetHeading < 0) {
+    targetHeading += 360;
+  }
+  if (targetHeading >= 360) {
+    targetHeading -= 360;
+  } 
+  this.heading = targetHeading;
+};
+
 Agent.prototype.gps = function(coordinate) {
   var drifted = turf.destination(
     turf.point(coordinate || this.location),
@@ -362,6 +391,8 @@ Agent.prototype.route = async function(range) {
     // Resetting steps progress
     this.stepReached = 0;
     this.totalCoveredStepsDistance = 0.0;
+    // Resetting initial heading at departure
+    this.heading = this.path.legs[0].steps[0].maneuver.bearing_after
     
     console.log("STEPS NUMBER: " + this.path.legs[0].steps.length);
     console.log("TOTAL DISTANCE: " + this.path.distance*1000);
