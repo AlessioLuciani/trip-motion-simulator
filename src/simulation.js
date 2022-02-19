@@ -12,7 +12,7 @@ const Status = require("./status");
 const ZOOM = 18;
 const Z = { min_zoom: ZOOM, max_zoom: ZOOM };
 
-var Simulation = function(opts, config) {
+var Simulation = function (opts, config) {
   this.pbf = opts.pbf;
   this.osrm = new OSRM(opts.graph);
   this.stepSize = 1000;
@@ -31,7 +31,7 @@ var Simulation = function(opts, config) {
   }
 };
 
-Simulation.prototype.setup = async function() {
+Simulation.prototype.setup = async function () {
   return new Promise((resolve, reject) => {
     var parse = parser();
 
@@ -40,7 +40,7 @@ Simulation.prototype.setup = async function() {
       .pipe(parse)
       .pipe(
         through2.obj((items, enc, next) => {
-          items.forEach(item => {
+          items.forEach((item) => {
             if (item.type === "node") {
               this.nodes.set(item.id, [item.lon, item.lat]);
             }
@@ -54,7 +54,7 @@ Simulation.prototype.setup = async function() {
           .pipe(parse)
           .pipe(
             through2.obj((items, enc, next) => {
-              items.forEach(item => {
+              items.forEach((item) => {
                 if (item.type === "node") {
                   // node
                   if (Object.keys(item.tags).length && item.tags.amenity) {
@@ -84,7 +84,7 @@ Simulation.prototype.setup = async function() {
                   // residential roads included, but given reduced weight
                   if (item.tags.highway) score = score * 0.1;
                   var geom = turf.lineString(
-                    item.refs.map(ref => {
+                    item.refs.map((ref) => {
                       return this.nodes.get(ref);
                     })
                   ).geometry;
@@ -111,7 +111,7 @@ Simulation.prototype.setup = async function() {
             this.quadranks.sort((a, b) => {
               return this.quadtree.get(a) - this.quadtree.get(b);
             });
-            this.quadranks.forEach(q => {
+            this.quadranks.forEach((q) => {
               this.quadscores.push(this.quadtree.get(q));
             });
 
@@ -121,18 +121,18 @@ Simulation.prototype.setup = async function() {
   });
 };
 
-Simulation.prototype.step = async function() {
+Simulation.prototype.step = async function () {
   this.time += this.stepSize;
   for (let agent of this.agents) {
     await agent.step();
   }
 };
 
-Simulation.prototype.snap = async function(coordinates) {
+Simulation.prototype.snap = async function (coordinates) {
   return new Promise((resolve, reject) => {
     var options = {
       coordinates: [coordinates],
-      number: 1
+      number: 1,
     };
 
     this.osrm.nearest(options, (err, results) => {
@@ -144,13 +144,13 @@ Simulation.prototype.snap = async function(coordinates) {
   });
 };
 
-Simulation.prototype.route = async function(a, b) {
+Simulation.prototype.route = async function (a, b) {
   return new Promise((resolve, reject) => {
     var options = {
       coordinates: [a, b],
       overview: "full",
       steps: true,
-      geometries: "geojson"
+      geometries: "geojson",
     };
 
     this.osrm.route(options, (err, results) => {
