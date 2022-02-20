@@ -12,7 +12,7 @@ const Status = require("./status");
 const ZOOM = 18;
 const Z = { min_zoom: ZOOM, max_zoom: ZOOM };
 
-var Simulation = function (opts, config) {
+var Simulation = function (opts, config, logger) {
   this.pbf = opts.pbf;
   this.osrm = new OSRM(opts.graph);
   this.stepSize = 1000;
@@ -25,9 +25,10 @@ var Simulation = function (opts, config) {
   this.chance = new Chance();
   this.Z = Z;
   this.agents = [];
+  this.logger = logger;
   var spawn = opts.agents;
   while (spawn--) {
-    this.agents.push(new Agent(this, opts, config));
+    this.agents.push(new Agent(this, opts, config, logger));
   }
 };
 

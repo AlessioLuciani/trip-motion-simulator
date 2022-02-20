@@ -2,6 +2,7 @@
 
 const readline = require("readline");
 const path = require("path");
+const logger = require("pino")();
 const Simulation = require("./simulation");
 var argv = require("minimist")(process.argv.slice(2));
 
@@ -20,6 +21,8 @@ if (argv.help || argv.h || Object.keys(argv).length === 1) {
   help += "--traces      GeoJSON traces output file\n";
   help += "--trips       MDS trips output file\n";
   help += "--changes     MDS status changes output file\n";
+  help +=
+    "--log         log level - refer to https://github.com/pinojs/pino/blob/master/docs/api.md#level-1\n";
 
   console.log(help);
   process.exit(0);
@@ -46,6 +49,7 @@ const probes = argv.probes;
 const traces = argv.traces;
 const trips = argv.trips;
 const changes = argv.changes;
+const logLevel = !argv.log ? "info" : argv.log;
 
 var opts = {
   probes: probes,
@@ -61,7 +65,10 @@ var opts = {
 var message = "";
 
 async function main() {
-  var simulation = new Simulation(opts, config);
+  logger.enabled = !quiet;
+  logger.level = logLevel;
+
+  var simulation = new Simulation(opts, config, logger);
 
   await simulation.setup();
 

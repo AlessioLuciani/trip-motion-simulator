@@ -19,12 +19,14 @@
     "moment": "^2.29.1",
     "osm-pbf-parser": "^2.3.0",
     "osrm": "^5.26.0",
+    "pino": "^7.8.0",
     "random": "^3.0.6",
     "readline": "^1.3.0",
     "through2": "^4.0.2"
   },
   "devDependencies": {
-    "prettier": "^2.5.1",
-    "canvas": "^2.9.0"
+    "canvas": "^2.9.0",
+    "pino-pretty": "^7.5.1",
+    "prettier": "^2.5.1"
   }
 }

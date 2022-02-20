@@ -4,7 +4,8 @@ const tilebelt = require("@mapbox/tilebelt");
 const cover = require("@mapbox/tile-cover");
 const Status = require("./status");
 
-var Agent = function (simulation, opts, config) {
+var Agent = function (simulation, opts, config, logger) {
+  this.logger = logger;
   this.probes = opts.probes;
   this.traces = opts.traces;
   this.trips = opts.trips;
@@ -182,17 +183,26 @@ Agent.prototype.step = async function () {
 
     // updating the current step based on the distance covered with this hop
     let newCovering = coveredDistance * 1000 - this.totalCoveredStepsDistance;
-    while (newCovering >= 0) {
+    while (
+      newCovering >= 0 &&
+      this.stepReached < this.path.legs[0].steps.length - 2
+    ) {
       const stepDistance = this.path.legs[0].steps[this.stepReached].distance;
       newCovering -= stepDistance;
       if (newCovering >= 0) {
-        this.stepReached++;
         this.totalCoveredStepsDistance += stepDistance;
+        this.stepReached++;
       }
     }
-    console.log("Step reached: " + this.stepReached);
-    console.log("Covered distance: " + coveredDistance * 1000);
-    console.log("Progress: " + progress);
+    // on arrival placing the agent back to the end of the last step
+    if (this.stepReached >= this.path.legs[0].steps.length - 2) {
+      this.stepReached = this.path.legs[0].steps.length - 2;
+      newCovering = 0;
+    }
+
+    this.logger.debug("Step reached: " + this.stepReached);
+    this.logger.debug("Covered distance: " + coveredDistance * 1000);
+    this.logger.debug("Progress: " + progress);
 
     const stepDistance = this.path.legs[0].steps[this.stepReached].distance;
     // distance covered on current step
@@ -203,14 +213,14 @@ Agent.prototype.step = async function () {
     // updating heading linearly interpolating between two steps
     this.updateHeading(progressOnStep, stepCovering, stepDistance);
 
-    console.log("Heading: " + this.heading);
+    this.logger.debug("Heading: " + this.heading);
 
     // updating acceleration
     this.updateAcceleration(progressOnStep, stepCovering, stepDistance);
 
-    console.log("Acceleration X: " + this.acceleration.x);
-    console.log("Acceleration Y: " + this.acceleration.y);
-    console.log("Rotation Rate Z: " + this.rotationRate.z);
+    this.logger.debug("Acceleration X: " + this.acceleration.x);
+    this.logger.debug("Acceleration Y: " + this.acceleration.y);
+    this.logger.debug("Rotation Rate Z: " + this.rotationRate.z);
 
     // if breakdown triggered, transition to broken
     if (this.simulation.time >= this.breakdown) {
@@ -395,7 +405,8 @@ function adjustTurnHeadingDiff(headingDiff) {
 function isDepartureOrArrival(stepIndex) {
   return (
     stepIndex == 0 ||
-    ( this.path !== undefined && stepIndex == this.path.legs[0].steps.length - 1 &&
+    (this.path !== undefined &&
+      stepIndex == this.path.legs[0].steps.length - 1 &&
       this.stepReached == stepIndex)
   );
 }
@@ -480,8 +491,8 @@ Agent.prototype.updateAcceleration = function (
         this.acceleration.x = 0;
       }
     }
-     // rotation rate Z
-     if (!isDepartureOrArrival(stepIndex)) {
+    // rotation rate Z
+    if (!isDepartureOrArrival(stepIndex)) {
       if (hopsCompleted <= secondsNeeded) {
         this.rotationRate.z =
           ((secondsNeeded - hopsCompleted) / secondsNeeded) *
@@ -565,8 +576,8 @@ Agent.prototype.route = async function (range) {
       this.path.distance *
       1000;
 
-    console.log("STEPS NUMBER: " + this.path.legs[0].steps.length);
-    console.log("TOTAL DISTANCE: " + this.path.distance * 1000);
+    this.logger.debug("STEPS NUMBER: " + this.path.legs[0].steps.length);
+    this.logger.debug("TOTAL DISTANCE: " + this.path.distance * 1000);
 
     if (this.path.distance === 0) {
       return await this.route(range * 1.5);
