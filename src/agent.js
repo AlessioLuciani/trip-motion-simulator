@@ -210,6 +210,7 @@ Agent.prototype.step = async function () {
 
     console.log("Acceleration X: " + this.acceleration.x);
     console.log("Acceleration Y: " + this.acceleration.y);
+    console.log("Rotation Rate Z: " + this.rotationRate.z);
 
     // if breakdown triggered, transition to broken
     if (this.simulation.time >= this.breakdown) {
@@ -409,6 +410,9 @@ Agent.prototype.updateAcceleration = function (
   // deceleration on Y ~ -4 m/s^2 - 3s decreasing - 3s increasing
   // acceleration on X on right turn ~ for 90 deg. +5 m/s^2 - 3s increasing - 3s decreasing
   // deceleration on X on left turn ~ for 90 deg. -5 m/s^2 - 3s decreasing - 3s increasing
+  // rotation rate on Z on right turn ~ for 90 deg. +0.7 - 3s increasing - 3s decreasing
+  // rotation rate on Z on left turn ~ for 90 deg. -0.7 - 3s decreasing - 3s increasing
+
   let stepIndex =
     progressOnStep >= 0.5 ? this.stepReached + 1 : this.stepReached;
   startHeading = this.path.legs[0].steps[stepIndex].maneuver.bearing_before;
@@ -419,6 +423,7 @@ Agent.prototype.updateAcceleration = function (
   let goingRight = headingShiftSign * headingDiff >= 0 ? 1 : -1;
   let secondsNeeded = Math.abs(headingDiff) / 30;
   let turningAcceleration = 1.7 * secondsNeeded;
+  let turningRotRate = 0.23 * secondsNeeded;
   if (progressOnStep >= 0.5) {
     // consider following step
     let hopsRemaining = (stepDistance - stepCovering) / this.hopDistance;
@@ -439,6 +444,17 @@ Agent.prototype.updateAcceleration = function (
           turningAcceleration;
       } else {
         this.acceleration.x = 0;
+      }
+    }
+    // rotation rate Z
+    if (!isDepartureOrArrival(stepIndex)) {
+      if (hopsRemaining <= secondsNeeded) {
+        this.rotationRate.z =
+          ((secondsNeeded - hopsRemaining) / secondsNeeded) *
+          goingRight *
+          turningRotRate;
+      } else {
+        this.rotationRate.z = 0;
       }
     }
   } else {
@@ -462,6 +478,17 @@ Agent.prototype.updateAcceleration = function (
           turningAcceleration;
       } else {
         this.acceleration.x = 0;
+      }
+    }
+     // rotation rate Z
+     if (!isDepartureOrArrival(stepIndex)) {
+      if (hopsCompleted <= secondsNeeded) {
+        this.rotationRate.z =
+          ((secondsNeeded - hopsCompleted) / secondsNeeded) *
+          goingRight *
+          turningRotRate;
+      } else {
+        this.rotationRate.z = 0;
       }
     }
   }
