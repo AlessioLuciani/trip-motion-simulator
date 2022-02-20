@@ -578,6 +578,9 @@ Agent.prototype.route = async function (range) {
 
     this.logger.debug("STEPS NUMBER: " + this.path.legs[0].steps.length);
     this.logger.debug("TOTAL DISTANCE: " + this.path.distance * 1000);
+    for (let step of this.path.legs[0].steps) {
+      this.logger.debug(step.maneuver);
+    }
 
     if (this.path.distance === 0) {
       return await this.route(range * 1.5);

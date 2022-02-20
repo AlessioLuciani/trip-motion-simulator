@@ -1,7 +1,7 @@
 {
   "name": "trip-motion-simulator",
-  "version": "0.1.0",
-  "description": "A module for generating simulated location telemetry",
+  "version": "1.0.0",
+  "description": "A module for generating simulated location and vehicle motion telemetry.",
   "bin": "./src/cli.js",
   "scripts": {
     "test": "npm run lint",

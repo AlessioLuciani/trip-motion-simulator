@@ -8,7 +8,7 @@ var argv = require("minimist")(process.argv.slice(2));
 
 if (argv.help || argv.h || Object.keys(argv).length === 1) {
   var help = "";
-  help += "\ntrip-simulator\n";
+  help += "\ntrip-motion-simulator\n";
   help += "\n";
   help += "-h,--help     show help\n";
   help += "--config      config car,bike,scooter\n";
