@@ -1,9 +1,11 @@
 Changelog
 ---
 
-## 3.0.0
+## 1.0.0
 
-- `iterations` flag changed to `seconds`
-- added `start` flag for specifying simulation start time in epoch milliseconds
-- simplified `stepSize` simulation logic, since it is always 1000ms per step
-- add example tutorial to `README.md`
+- add programmatic generation based on linear interpolation of heading, acceleration on _X_ and _Y_ axes, and rotation rate on _Z_ axis 
+- add [`pino`](https://www.npmjs.com/package/pino) logger
+
+## 0.1.0
+
+- first pre-release
